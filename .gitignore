@@ -1,0 +1,40 @@
+
+
+### Python ###
+__pycache__/
+
+### mypy ###
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+### PyCharm ###
+.idea/
+
+### Pytest ###
+/services/backend/.pytest_cache
+.pytest_cache
+#/services/backend/testing/allureress/*
+
+### Environments ###
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+### Local dependencies ###
+/services/backend/requirements.txt
+requirements.txt
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+/services/backend/celerybeat-schedule
+
+### PostreSQL and PgAdmin ###
+pg-data
+pgadmin
+
+### Alembic ###
+#/services/backend/migrations/versions/*

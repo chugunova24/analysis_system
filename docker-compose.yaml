@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+
+  web:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: web
+    command: sh /start.sh
+    volumes:
+      - ./services/backend:/app
+    ports:
+      - ${FASTAPI_PORT}:${FASTAPI_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dockernet
+
+  celery_worker:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: celery_worker
+    command: sh /start-celeryworker.sh
+    volumes:
+      - ./services/backend:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dockernet
+
+  celery_beat:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: celery_beat
+    command: sh /start-celerybeat.sh
+    volumes:
+      - ./services/backend:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dockernet
+
+  flower:
+    tty: true
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: flower
+    command: sh /start-flower.sh
+    volumes:
+      - ./services/backend:/app
+    env_file:
+      - .env
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dockernet
+
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_NAME}
+    volumes:
+      - ./pg-data:${PG_VOLUMES}
+    ports:
+      - ${PG_PORT}:${PG_PORT}
+    networks:
+      - dockernet
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:8.2
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - ./pgadmin:${PGADMIN_VOLUMES}
+    user: root
+    ports:
+      - ${PGADMIN_PORT}:80
+    networks:
+      - dockernet
+
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: always
+    command: redis-server ${REDIS_VOLUMES_CONF}
+    volumes:
+      #      - ./redis_data:${REDIS_VOLUMES}
+      #      - ./redis.conf:${REDIS_VOLUMES_CONF}
+      - redis_volume_data:/data
+      - redis_conf:/etc/redis/redis.conf
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    env_file:
+      - .env
+    environment:
+      #      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DATABASES: ${REDIS_DATABASES}
+    networks:
+      - dockernet
+
+volumes:
+  redis_volume_data:
+  redis_conf:
+
+networks:
+  dockernet:
+    driver: bridge

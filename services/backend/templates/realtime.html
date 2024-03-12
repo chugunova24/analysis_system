@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.2/jsoneditor.css" rel="stylesheet"
+          type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.2/jsoneditor.min.js"></script>
+</head>
+<body>
+<div style="display: flex; justify-content: center;">
+    <div id="jsoneditor" style="width: 800px; height: 800px;"></div>
+</div>
+<script>
+
+    let ws = new WebSocket("ws://localhost:8000/data/ws");
+    let container = document.getElementById("jsoneditor");
+    let editor = new JSONEditor(container);
+
+    ws.onmessage = function (event) {
+        let data = event.data;
+
+        console.log(data);
+        console.log(typeof data);
+        data = JSON.parse(data);
+        console.log(data);
+        editor.set(data);
+
+    };
+
+</script>
+</body>
+</html>

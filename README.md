@@ -56,8 +56,9 @@ docker compose up -d
 
 
 # Схема системы <a name="SchemaSystem"></a>
+
 <p align="center">
-<img src="https://github.com/chugunova24/analysis_system/readme_img/schema_analysis_device.drawio.png" style="width:50%;height:50%"/>
+<img src="https://github.com/chugunova24/analysis_system/blob/master/readme_img/schema_analysis_device.drawio.png" style="width:50%;height:50%"/>
 </p>
 
 # Дополнительно: учетные данные PgAdmin4 <a name="Addition-PgAdmin"></a>

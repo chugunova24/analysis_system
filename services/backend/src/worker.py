@@ -17,7 +17,6 @@ from src.config import settings
 
 
 PATH_TASKS = [
-    "src.tasks.healthchecks.tasks",
     "src.tasks.data.tasks",
 ]
 

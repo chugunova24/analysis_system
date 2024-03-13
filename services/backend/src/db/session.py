@@ -1,8 +1,6 @@
 # Standard Library imports
-import asyncio
 from typing import AsyncGenerator
 
-import sqlalchemy
 # Core FastAPI imports
 
 # Third-party imports
@@ -33,4 +31,3 @@ sync_session_maker = sessionmaker(
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
-

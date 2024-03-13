@@ -1,12 +1,12 @@
 # Standard Library imports
 import asyncio
+import json
 import pickle
-from select import select
-from typing import AsyncGenerator, Optional, Any
+# from select import select
+from typing import AsyncGenerator, Optional
 from datetime import datetime
 from uuid import UUID
 
-import sqlalchemy
 # Core FastAPI imports
 from fastapi import APIRouter, Depends, WebSocket, Request
 from fastapi_restful.cbv import cbv
@@ -14,16 +14,16 @@ from fastapi_restful.cbv import cbv
 # Third-party imports
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
+from sqlalchemy import select
 
-from src.data.models import InfoDevice
-from src.data.queries.init_data import bulk_new_devices, bulk_new_info_device
 # App imports
 from src.db.session import get_async_session, sync_session_maker
 from src.main import templates
 from src.data.queries.orm import InfoDeviceORM, DeviceORM, TaskResultORM
 import src.data.schemas.response as schema_res
 import src.data.schemas.request as schema_req
-
+from src.data.models import InfoDevice
+from src.data.queries.init_data import bulk_new_devices, bulk_new_info_device
 
 """
 
@@ -35,6 +35,9 @@ router = APIRouter()
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 
+no_data = {"result": "Нет данных"}
+no_data_str = json.dumps(no_data)
+
 
 # get_current_user = fastapi_users.current_user()
 
@@ -44,7 +47,6 @@ datetime_format = '%Y-%m-%d %H:%M:%S'
 @cbv(router)
 class DataView:
     db: AsyncGenerator[AsyncSession, None] = Depends(get_async_session)
-
 
     @router.get("/realtime")
     async def get(self, request: Request):
@@ -56,18 +58,18 @@ class DataView:
             request=request, name="realtime.html", context={"id": id}
         )
 
-    @router.post("/",
-                 status_code=status.HTTP_201_CREATED,
-                 response_model=schema_res.InfoSchemaResponse)
-    async def create_row(self,
-                         data: schema_req.InfoSchemaRequest) -> schema_res.InfoSchemaResponse:
-        """
-        Добавление одной записи, отправленной устройством, в БД
-        """
-        new_row = await InfoDeviceORM.create_data(db=self.db,
-                                                  data=data)
-
-        return new_row
+    # @router.post("/",
+    #              status_code=status.HTTP_201_CREATED,
+    #              response_model=schema_res.InfoSchemaResponse)
+    # async def create_row(self,
+    #                      data: schema_req.InfoSchemaRequest) -> schema_res.InfoSchemaResponse:
+    #     """
+    #     Добавление одной записи, отправленной устройством, в БД
+    #     """
+    #     new_row = await InfoDeviceORM.create_data(db=self.db,
+    #                                               data=data)
+    #
+    #     return new_row
 
     @router.post("/test_data",
                  status_code=status.HTTP_201_CREATED,
@@ -100,27 +102,23 @@ class DeviceView:
 
 @cbv(router)
 class AnalysisDataView:
-
-
     db: AsyncGenerator[AsyncSession, None] = Depends(get_async_session)
-    syn_db: sqlalchemy.orm.session.Session = Depends(sync_session_maker)
-
 
     @router.get("/load_init_data",
                 status_code=status.HTTP_201_CREATED)
     def load_init_data(self):
 
-        with self.syn_db() as session:
+        with sync_session_maker() as session:
             stmt = select(InfoDevice).limit(1)
             res = session.execute(stmt)
             is_empty = res.first()
 
-            if is_empty:
+            # bulk можно использовать только в синхронных сессиях
+            if is_empty is None:
                 session.bulk_save_objects(bulk_new_devices)
                 session.bulk_save_objects(bulk_new_info_device)
-            # db.commit()
-        return {"result": "success"}
-
+            session.commit()
+        return {"result": "success", "is_created": bool(not is_empty)}
 
     @router.get("/statistic",
                 status_code=status.HTTP_200_OK,
@@ -165,9 +163,12 @@ async def websocket_endpoint(websocket: WebSocket,
     while True:
         response = await TaskResultORM.get_celery_result(db=db)
 
-        response = response._asdict()
-        response = pickle.loads(response['result'])
-        response = schema_response(root=response).model_dump_json()
+        if response:
+            response = response._asdict()
+            response = pickle.loads(response['result'])
+            response = schema_response(response).model_dump_json()
+        else:
+            response = no_data_str
 
         await websocket.send_text(data=response)
         await asyncio.sleep(15)

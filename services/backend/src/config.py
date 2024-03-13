@@ -114,4 +114,4 @@ def get_settings() -> BaseSettings:
 
 settings: BaseSettings = get_settings()
 
-print(f"current PG_DATABASE_URL:: {settings.PG_DATABASE_URL}")
+print(f"PG_DATABASE_URL:: {settings.PG_DATABASE_URL}")

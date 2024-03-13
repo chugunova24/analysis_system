@@ -20,12 +20,10 @@ from src.db.session import sync_session_maker
 @shared_task(name="all_devices_analysis")
 def all_devices_analysis():
 
-    from src.data.schemas.response import AnalysisDataOneDeviceResponse as schema
-
     with sync_session_maker() as db:
 
         statistic = InfoDeviceORM.sync_get_statistic_all_time_all_devices(db=db)
 
-        statistic = [schema.model_validate(row).model_dump() for row in statistic]
-
+    if statistic:
+        return statistic._asdict()
     return statistic

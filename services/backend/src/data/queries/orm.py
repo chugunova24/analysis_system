@@ -11,12 +11,11 @@ from sqlalchemy import select, text, and_
 from sqlalchemy.sql import functions as func
 import sqlalchemy
 
-from src.data.queries.init_data import bulk_new_devices, bulk_new_info_device
 # App imports
 from src.data.schemas import request as schema_request
 from src.data.schemas import response as schema_response
 from src.data.models import InfoDevice, Device
-from src.db.session import sync_session_maker
+
 
 """
 
@@ -101,7 +100,6 @@ class InfoDeviceORM:
             to_datetime = datetime.now()
 
         if from_datetime is not None:
-            print("ОНО ПОСТАВИЛОСЬ")
             stmt_median_x_period = stmt_median_x_period \
                 .where(time.between(from_datetime, to_datetime)) \
                 .label('mediana_x')
@@ -133,11 +131,8 @@ class InfoDeviceORM:
         else:
             stmt = stmt.where(InfoDevice.device_id == device_id)
 
-        print(f"from_datetime: {from_datetime}\nto_datetime: {to_datetime}")
-
         result = await db.execute(stmt)
         result = result.first()
-        print(f"Это то чо надо?:: {result}")
 
         return result
 
@@ -162,7 +157,7 @@ class TaskResultORM:
 
     @staticmethod
     async def get_celery_result(db: AsyncGenerator):
-        stmt = """SELECT id, result FROM celery_taskmeta ORDER BY date_done DESC LIMIT 1"""
+        stmt = """SELECT id, result FROM celery_taskmeta WHERE status='SUCCESS' ORDER BY date_done DESC LIMIT 1"""
 
         last_info = await db.execute(text(stmt))
 

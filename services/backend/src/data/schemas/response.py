@@ -1,5 +1,6 @@
 # Standard Library imports
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 # Core FastAPI imports
@@ -77,4 +78,4 @@ class AnalysisDataOneDeviceWebsocketResponse(AnalysisDataSchemaBase):
 
 
 class AnalysisDataAllDeviceWebsocketResponse(RootModel):
-    root: list["AnalysisDataOneDeviceWebsocketResponse"]
+    root: Optional["AnalysisDataSchemaBase"]
